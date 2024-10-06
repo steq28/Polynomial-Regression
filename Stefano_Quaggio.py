@@ -22,8 +22,14 @@ def visualize_data(X, y, coeffs, z_range, title=""):
 
 def plot_polynomial(coeffs, z_range, color='b') :
     z_min, z_max = z_range
+
+    # Generate z values in the range [z_min, z_max]
     z = np.linspace(z_min, z_max, 100)
+
+    # Compute the polynomial p(z) = w_0 + w_1*z + w_2*z^2 + ... + w_n*z^n using the poly1d function
     p = np.poly1d(coeffs)
+
+    # Plot the polynomial
     plt.plot(z, p(z), color)
     plt.xlabel('z')
     plt.ylabel('p(z)')
@@ -32,9 +38,9 @@ def plot_polynomial(coeffs, z_range, color='b') :
 
 def create_dataset(coeffs, z_range, sample_size, sigma, seed=42):
     torch.manual_seed(seed)
-
     z_min, z_max = z_range
 
+    # Generate z values in the range [z_min, z_max]
     z = torch.rand(sample_size)
     z = z * (z_max - z_min) + z_min
     
@@ -45,6 +51,7 @@ def create_dataset(coeffs, z_range, sample_size, sigma, seed=42):
     for i, coeff in enumerate(coeffs):
         y_hat += coeff * z**i
 
+    # Add Gaussian noise to y_hat
     y = y_hat + torch.normal(torch.zeros(sample_size), sigma*torch.ones(sample_size))
 
     return z, y
@@ -62,7 +69,7 @@ def visualize_data(X, y, coeffs, z_range, title=""):
     plt.show()
 
 if __name__ == "__main__":
-    #plot_polynomial([1, -1, 5, -0.1, 1/30], [-4, 4], 'r')
+    plot_polynomial([1, -1, 5, -0.1, 1/30], [-4, 4], 'r')
 
     z_range = [-2, 2]
     coeffs = [1, -1, 5, -0.1, 1/30]
