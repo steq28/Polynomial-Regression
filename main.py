@@ -1,15 +1,15 @@
+from typing import List, Tuple
+
+import matplotlib.pyplot as plt
 import numpy as np
-import matplotlib.pyplot as plt 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 
-def plot_polynomial(coeffs, z_range, color='b') :
+def plot_polynomial(coeffs: List[float], z_range: Tuple[float, float], color: str = 'b'):
     z_min, z_max = z_range
-    # Generate z values in the range [z_min, z_max]
     z = np.linspace(z_min, z_max)
 
-    # Create the polynomial p
     p = np.poly1d(coeffs)
 
     plt.plot(z, p(z), color)
@@ -26,52 +26,51 @@ def plot_polynomial(coeffs, z_range, color='b') :
     plt.title(r'$p(z) = ' + polynomial + '$')
     plt.show()
 
-def create_dataset(coeffs, z_range, sample_size, sigma, seed=42):
+def create_dataset(coeffs: List[float], z_range: Tuple[float, float], sample_size: int, sigma: float, seed: int = 42):
     torch.manual_seed(seed)
     z_min, z_max = z_range
 
     z = torch.rand(sample_size)
     z = z * (z_max - z_min) + z_min
+
+    p = np.poly1d(coeffs)
     
+    y_hat = torch.tensor(p(z))
+
+    y = y_hat + torch.normal(torch.zeros(sample_size), sigma * torch.ones(sample_size))
+
     X = torch.stack([z ** power for power in range(5)], dim=1)
-
-    y_hat = torch.zeros(sample_size)
-
-    # Compute the polynomial y_hat = w_0 + w_1*x + w_2*x^2 + ... + w_n*x^n
-    for i, coeff in enumerate(coeffs[::-1]):
-        y_hat += coeff * z**i
-
-    # Add Gaussian noise to y_hat
-    y = y_hat + torch.normal(torch.zeros(sample_size), sigma*torch.ones(sample_size))
     
     return X, y
 
-def visualize_data(X, y, coeffs, z_range, title=""):
+def visualize_data(X: torch.Tensor, y: torch.Tensor, coeffs: List[float], z_range: Tuple[float, float], title: str = ""):
     z_min, z_max = z_range
     z = np.linspace(z_min, z_max)
     p = np.poly1d(coeffs)
 
     plt.plot(z, p(z), 'b', label='True polynomial')
-    plt.scatter(X[:,1], y, c='r', label='Noisy data')
+    plt.scatter(X[:, 1], y, c='r', label='Noisy data')
     plt.xlabel('z')
     plt.ylabel('p(z)')
     plt.title(title)
     plt.legend()
     plt.show()
 
-def create_train_model(X_train, y_train, X_val, y_val, n_steps = 500, input_size=5, bonus_question = False):
+def create_train_model(X_train: torch.Tensor, y_train: torch.Tensor, X_val: torch.Tensor, y_val: torch.Tensor, n_steps: int = 500, input_size: int = 5, bonus_question: bool = False):
     train_loss_vals = []
     val_loss_vals = []
     estimated_w = []
 
     model = nn.Linear(input_size, 1, bonus_question)
     loss_fn = nn.MSELoss()
-    learning_rate = 0.01
+    learning_rate = 0.027 if bonus_question else 0.03
 
     y_train = y_train.reshape(-1, 1)
     y_val = y_val.reshape(-1, 1)
-    X_train = X_train.reshape(-1, 1)
-    X_val = X_val.reshape(-1, 1)
+
+    if bonus_question:
+        X_train = X_train.reshape(-1, 1)
+        X_val = X_val.reshape(-1, 1)
 
     optimizer = optim.SGD(model.parameters(), lr=learning_rate)
 
@@ -96,9 +95,9 @@ def create_train_model(X_train, y_train, X_val, y_val, n_steps = 500, input_size
 
     return model, train_loss_vals, val_loss_vals, estimated_w, loss_val, step
 
-def visualize_loss(train_loss_vals, val_loss_vals, step):
-    plt.plot(range(step + 1), train_loss_vals)
-    plt.plot(range(step + 1), val_loss_vals)
+def visualize_loss(train_loss_vals: List[float], val_loss_vals: List[float], n_steps: int):
+    plt.plot(range(n_steps + 1), train_loss_vals)
+    plt.plot(range(n_steps + 1), val_loss_vals)
     plt.legend(["Training loss", "Validation loss"])
     plt.xlabel("Steps")
     plt.ylabel("Loss value")
@@ -108,21 +107,21 @@ def visualize_loss(train_loss_vals, val_loss_vals, step):
 '''
 Bonus Question functions
 '''
-def bonus_create_dataset(X_range, sample_size, sigma, seed=42):
+def bonus_create_dataset(X_range: Tuple[float, float], sample_size: int, sigma: float, seed: int = 42):
     torch.manual_seed(seed)
     X_min, X_max = X_range
 
     X = torch.rand(sample_size)
     X = X * (X_max - X_min) + X_min
 
-    y_hat = 2 * torch.log(X+1) + 3
+    y_hat = 2 * torch.log(X + 1) + 3
 
     y = y_hat + torch.normal(torch.zeros(sample_size), sigma * torch.ones(sample_size))
     
     return X, y
 
-def bonus_visualize_data(X_noisy, y_noisy, X_true, title=""):
-    y_true = 2 * np.log(X_true+1) + 3
+def bonus_visualize_data(X_noisy: torch.Tensor, y_noisy: torch.Tensor, X_true: torch.Tensor, title: str = ""):
+    y_true = 2 * np.log(X_true + 1) + 3
 
     plt.plot(X_true, y_true, 'b', label='True function')
     plt.scatter(X_noisy, y_noisy, c='r', alpha=.6, label='Noisy data')
@@ -132,13 +131,11 @@ def bonus_visualize_data(X_noisy, y_noisy, X_true, title=""):
     plt.legend()
     plt.show()
 
-def bonus_plot_function_comparison(X, estimated_coeffs, estimated_bias):
-    y_hat = 2 * np.log(X+1) + 3
+def bonus_plot_function_compare(X: torch.Tensor, estimated_coeffs: np.ndarray, estimated_bias: float):
+    y_hat = 2 * np.log(X + 1) + 3
 
-    # Plot the polynomial
     plt.plot(X, y_hat, 'b:', label='True function')
     p_estimated = X * estimated_coeffs[0] + estimated_bias
-
 
     plt.plot(X, p_estimated, 'r', label='Estimated function')
     plt.xlabel('x')
@@ -150,83 +147,87 @@ def bonus_plot_function_comparison(X, estimated_coeffs, estimated_bias):
 if __name__ == "__main__":
     # Initialization of the parameters
     z_range = [-2, 2]
-    coeffs = np.array([1/30, -0.1, 5, -1, 1])
+    coeffs = np.array([1/30,-0.1, 5, -1, 1])
     n_samples = 500
     sigma = 0.5
-    n_steps = 650
-
-    # '''
-    # Code for Q1
-    # '''
-    #assert np.version.version=="2.1"
-    # '''
-    # Code for Q2
-    # '''
-    # plot_polynomial(coeffs, [-4, 4], 'r')
-    
-    # '''
-    # Code for Q3 and Q4
-    # '''
-    # X_train, y_train = create_dataset(coeffs, z_range, n_samples, sigma, 0)
-    # X_val, y_val= create_dataset(coeffs, z_range, n_samples, sigma, 1)
-
-    # '''
-    # Code for Q5
-    # '''
-    # visualize_data(X_train, y_train, coeffs, z_range, 'Training data')
-    # visualize_data(X_val, y_val, coeffs, z_range, 'Validation data')
-
-    # '''
-    # Code for Q6
-    # '''
-    # model, train_loss_vals, val_loss_vals, estimated_w, loss_val, step = create_model(X_train, y_train, X_val, y_val, n_steps)
-
-    # '''
-    # Code for Q7
-    # '''
-    # print("Training done, with an evaluation loss of {}".format(loss_val.item()))
-    # print("Final w:", model.weight)
-
-    # visualize_loss(train_loss_vals, val_loss_vals)
-    
-
-    # '''
-    # Code for Q8
-    # '''
-    # estimated_coeffs = model.weight.detach().numpy().flatten()[::-1]
-    # z_min, z_max = z_range
-    # z = np.linspace(z_min, z_max)
-    # p = np.poly1d(coeffs)
-
-    # # Plot the polynomial
-    # plt.plot(z, p(z), 'b:', label='True polynomial')
-    # p_estimated = np.poly1d(estimated_coeffs)
-    # plt.plot(z, p_estimated(z), 'r', label='Estimated polynomial')
-    # plt.xlabel('z')
-    # plt.ylabel('p(z)')
-    # plt.legend()
-    # plt.title('True VS estimated polynomial')
-    # plt.show()
-
-    # '''
-    # Code for Q9
-    # '''
-    # estimated_w = np.array(estimated_w)
-    # coeffs = np.array(coeffs[::-1])
-
-    # for i in range(5):
-    #     plt.plot(range(n_steps), estimated_w[:, i], label=f'Estimated $w_{{{i}}}$')
-    #     plt.axhline(y = coeffs[i], alpha=.6 , linestyle = 'dotted', label='_Hidden')
-    #     plt.text(n_steps, coeffs[i], f'$w_{{{i}}}$', fontsize=10, va='bottom', ha='left')
-    
-    # plt.xlabel('Steps')
-    # plt.ylabel('W value')
-    # plt.legend(loc='best')
-    # plt.title('Estimated w over time')
-    # plt.show()
+    n_steps = 600
+    colors = ['r', 'g', 'b', 'y', 'm']
 
     '''
-    Bonus Question
+    Code for Q1
+    '''
+    assert np.version.version=="2.1"
+
+    '''
+    Code for Q2
+    '''
+    plot_polynomial(coeffs, [-4, 4], 'r')
+    
+    '''
+    Code for Q3 and Q4
+    '''
+    X_train, y_train = create_dataset(coeffs, z_range, n_samples, sigma, 0)
+    X_val, y_val= create_dataset(coeffs, z_range, n_samples, sigma, 1)
+
+    '''
+    Code for Q5
+    '''
+    visualize_data(X_train, y_train, coeffs, z_range, 'Training data')
+    visualize_data(X_val, y_val, coeffs, z_range, 'Validation data')
+
+    '''
+    Code for Q6
+    '''
+    model, train_loss_vals, val_loss_vals, estimated_w, loss_val, step = create_train_model(X_train, y_train, X_val, y_val, n_steps)
+
+    '''
+    Code for Q7
+    '''
+    print("Training done, with an evaluation loss of {}".format(loss_val.item()))
+    print("Final w:", model.weight)
+
+    visualize_loss(train_loss_vals, val_loss_vals, step)
+
+    '''
+    Code for Q8
+    '''
+    estimated_coeffs = model.weight.detach().numpy().flatten()[::-1]
+    z_min, z_max = z_range
+    z = np.linspace(z_min, z_max)
+
+    p = np.poly1d(coeffs)
+    plt.plot(z, p(z), 'b:', label='True polynomial')
+
+    p_estimated = np.poly1d(estimated_coeffs)
+    plt.plot(z, p_estimated(z), 'r', label='Estimated polynomial')
+
+    plt.xlabel('z')
+    plt.ylabel('p(z)')
+    plt.legend()
+    plt.title('True VS estimated polynomial')
+    plt.show()
+
+    '''
+    Code for Q9
+    '''
+    estimated_w = np.array(estimated_w)
+    coeffs = coeffs[::-1]
+    
+    plt.figure(figsize=(9, 7))
+
+    for i in range(5):
+        plt.plot(range(n_steps), estimated_w[:, i], label=f'Estimated $w_{{{i}}}$', color=colors[i])
+        plt.axhline(y = coeffs[i], alpha=.6 , linestyle = 'dotted', label='_Hidden', color=colors[i])
+        plt.text(n_steps, coeffs[i], f'$w_{{{i}}}$', fontsize=10, va='bottom', ha='left')
+    
+    plt.xlabel('Steps')
+    plt.ylabel('W value')
+    plt.legend(loc='upper left')
+    plt.title('Estimated w over time')
+    plt.show()
+
+    '''
+    Code for Bonus Question
     '''
     ranges = [[-0.05, 0.01], [-0.05, 10]]
 
@@ -249,4 +250,4 @@ if __name__ == "__main__":
         estimated_coeffs = bonus_model.weight.detach().numpy().flatten()[::-1]
         estimated_bias = bonus_model.bias.detach().numpy()
 
-        bonus_plot_function_comparison(X_true, estimated_coeffs, estimated_bias)
+        bonus_plot_function_compare(X_true, estimated_coeffs, estimated_bias)
