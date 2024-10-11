@@ -105,6 +105,9 @@ def visualize_loss(train_loss_vals, val_loss_vals, step):
     plt.title("Training and validation loss")
     plt.show()
 
+'''
+Bonus Question functions
+'''
 def bonus_create_dataset(X_range, sample_size, sigma, seed=42):
     torch.manual_seed(seed)
     X_min, X_max = X_range
@@ -118,18 +121,30 @@ def bonus_create_dataset(X_range, sample_size, sigma, seed=42):
     
     return X, y
 
-def bonus_visualize_data(X, y, X_range, title=""):
-    X_min, X_max = X_range
-    X_true = np.linspace(X_min, X_max)
-
+def bonus_visualize_data(X_noisy, y_noisy, X_true, title=""):
     y_true = 2 * np.log(X_true+1) + 3
 
-    plt.plot(X_true, y_true, 'b', label='True polynomial')
-    plt.scatter(X, y, c='r', alpha=.6, label='Noisy data')
-    plt.xlabel('z')
-    plt.ylabel('p(z)')
+    plt.plot(X_true, y_true, 'b', label='True function')
+    plt.scatter(X_noisy, y_noisy, c='r', alpha=.6, label='Noisy data')
+    plt.xlabel('x')
+    plt.ylabel('f(x)')
     plt.title(title)
     plt.legend()
+    plt.show()
+
+def bonus_plot_function_comparison(X, estimated_coeffs, estimated_bias):
+    y_hat = 2 * np.log(X+1) + 3
+
+    # Plot the polynomial
+    plt.plot(X, y_hat, 'b:', label='True function')
+    p_estimated = X * estimated_coeffs[0] + estimated_bias
+
+
+    plt.plot(X, p_estimated, 'r', label='Estimated function')
+    plt.xlabel('x')
+    plt.ylabel('f(x)')
+    plt.legend()
+    plt.title('True VS estimated function')
     plt.show()
 
 if __name__ == "__main__":
@@ -213,16 +228,25 @@ if __name__ == "__main__":
     '''
     Bonus Question
     '''
-    first_range = [-0.05, 0.01]
+    ranges = [[-0.05, 0.01], [-0.05, 10]]
 
-    bonus_X_train, bonus_y_train = bonus_create_dataset(first_range, n_samples, sigma, 0)
-    bonus_X_val, bonus_y_val = bonus_create_dataset(first_range, n_samples, sigma, 1)
+    for value_range in ranges: 
+        X_min, X_max = value_range
+        X_true = np.linspace(X_min, X_max)
 
-    # bonus_visualize_data(bonus_X_train, bonus_y_train, first_range, 'Training data')
-    # bonus_visualize_data(bonus_X_val, bonus_y_val, first_range, 'Validation data')
+        bonus_X_train, bonus_y_train = bonus_create_dataset(value_range, n_samples, sigma, 0)
+        bonus_X_val, bonus_y_val = bonus_create_dataset(value_range, n_samples, sigma, 1)
 
-    bonus_model, bonus_train_loss_vals, bonus_val_loss_vals, bonus_estimated_w, bonus_loss_val, bonus_step = create_train_model(bonus_X_train, bonus_y_train, bonus_X_val, bonus_y_val, 200, 1, True)
+        bonus_visualize_data(bonus_X_train, bonus_y_train, X_true, 'Training data')
+        bonus_visualize_data(bonus_X_val, bonus_y_val, X_true, 'Validation data')
 
-    print("Training done, with an evaluation loss of {}".format(bonus_loss_val.item()))
-    print("Final w:", bonus_model.weight)
-    visualize_loss(bonus_train_loss_vals, bonus_val_loss_vals, bonus_step)
+        bonus_model, bonus_train_loss_vals, bonus_val_loss_vals, _, bonus_loss_val, bonus_step = create_train_model(bonus_X_train, bonus_y_train, bonus_X_val, bonus_y_val, 200, 1, True)
+
+        print("Training done, with an evaluation loss of {}".format(bonus_loss_val.item()))
+        print("Final w:", bonus_model.weight)
+        visualize_loss(bonus_train_loss_vals, bonus_val_loss_vals, bonus_step)
+
+        estimated_coeffs = bonus_model.weight.detach().numpy().flatten()[::-1]
+        estimated_bias = bonus_model.bias.detach().numpy()
+
+        bonus_plot_function_comparison(X_true, estimated_coeffs, estimated_bias)
