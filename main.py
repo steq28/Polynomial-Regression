@@ -117,17 +117,17 @@ def bonus_create_dataset(X_range: Tuple[float, float], sample_size: int, sigma: 
     X = torch.rand(sample_size)
     X = X * (X_max - X_min) + X_min
 
-    y_hat = 2 * torch.log(X + 1) + 3
+    y_hat = 2 * np.log(X + 1) + 3
 
     y = y_hat + torch.normal(torch.zeros(sample_size), sigma * torch.ones(sample_size))
     
-    return X, y
+    return torch.tensor(X), y
 
 def bonus_visualize_data(X_noisy: torch.Tensor, y_noisy: torch.Tensor, X_true: torch.Tensor, title: str = ""):
     y_true = 2 * np.log(X_true + 1) + 3
 
-    plt.plot(X_true, y_true, 'b', label='True function')
-    plt.scatter(X_noisy, y_noisy, c='r', alpha=.6, label='Noisy data')
+    plt.plot(X_true, y_true, 'r', label='True function')
+    plt.scatter(X_noisy, y_noisy, c='b', alpha=.6, label='Noisy data')
     plt.xlabel('x')
     plt.ylabel('f(x)')
     plt.title(title)
@@ -135,15 +135,18 @@ def bonus_visualize_data(X_noisy: torch.Tensor, y_noisy: torch.Tensor, X_true: t
     plt.savefig('bonus_visualize_data.png', dpi=350)
     plt.show()
 
-def bonus_plot_function_compare(X: torch.Tensor, estimated_coeffs: np.ndarray, estimated_bias: float):
+def bonus_plot_function_compare(X: torch.Tensor, estimated_coeffs: np.ndarray, estimated_bias: float, n_plot: int):
     y_hat = 2 * np.log(X + 1) + 3
-
     plt.plot(X, y_hat, 'b:', label='True function')
-    p_estimated = X * estimated_coeffs[0] + estimated_bias
+    p_estimated = torch.from_numpy(X) * estimated_coeffs + estimated_bias
 
     plt.plot(X, p_estimated, 'r', label='Estimated function')
     plt.xlabel('x')
     plt.ylabel('f(x)')
+    if n_plot == 0:
+        plt.ylim(2.7, 3.3)
+    else:
+        plt.ylim(2, 9)
     plt.legend()
     plt.title('True VS estimated function')
     plt.savefig('bonus_plot_function_compare.png', dpi=350)
@@ -239,7 +242,7 @@ if __name__ == "__main__":
     ranges = [[-0.05, 0.01], [-0.05, 10]]
     bonus_steps = 450
 
-    for value_range in ranges: 
+    for index, value_range  in enumerate(ranges): 
         X_min, X_max = value_range
         X_true = np.linspace(X_min, X_max)
 
@@ -255,7 +258,7 @@ if __name__ == "__main__":
         print("Final w:", bonus_model.weight)
         visualize_loss(bonus_train_loss_vals, bonus_val_loss_vals, bonus_steps)
 
-        estimated_coeffs = bonus_model.weight.detach().numpy().flatten()[::-1]
-        estimated_bias = bonus_model.bias.detach().numpy()
+        estimated_coeffs = bonus_model.weight.data[0]
+        estimated_bias = bonus_model.bias.data[0]
 
-        bonus_plot_function_compare(X_true, estimated_coeffs, estimated_bias)
+        bonus_plot_function_compare(X_true, estimated_coeffs, estimated_bias, index)
