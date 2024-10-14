@@ -24,7 +24,7 @@ def plot_polynomial(coeffs: List[float], z_range: Tuple[float, float], color: st
     polynomial = ' + '.join(terms)
 
     plt.title(r'$p(z) = ' + polynomial + '$')
-    plt.savefig('plot_polynomial.png', dpi=350)
+    # plt.savefig('plot_polynomial.png', dpi=350)
     plt.show()
 
 def create_dataset(coeffs: List[float], z_range: Tuple[float, float], sample_size: int, sigma: float, seed: int = 42):
@@ -55,7 +55,7 @@ def visualize_data(X: torch.Tensor, y: torch.Tensor, coeffs: List[float], z_rang
     plt.ylabel('p(z)')
     plt.title(title)
     plt.legend()
-    plt.savefig(f'visualize_data_{title}.png', dpi=350)
+    # plt.savefig(f'visualize_data_{title}.png', dpi=350)
     plt.show()
 
 def create_train_model(X_train: torch.Tensor, y_train: torch.Tensor, X_val: torch.Tensor, y_val: torch.Tensor, n_steps: int = 500, input_size: int = 5, bonus_question: bool = False):
@@ -104,12 +104,9 @@ def visualize_loss(train_loss_vals: List[float], val_loss_vals: List[float], n_s
     plt.xlabel("Steps")
     plt.ylabel("Loss value")
     plt.title("Training and validation loss")
-    plt.savefig('visualize_loss.png', dpi=350)
+    # plt.savefig('visualize_loss.png', dpi=350)
     plt.show()
 
-'''
-Bonus Question functions
-'''
 def bonus_create_dataset(X_range: Tuple[float, float], sample_size: int, sigma: float, seed: int = 42):
     torch.manual_seed(seed)
     X_min, X_max = X_range
@@ -121,7 +118,7 @@ def bonus_create_dataset(X_range: Tuple[float, float], sample_size: int, sigma: 
 
     y = y_hat + torch.normal(torch.zeros(sample_size), sigma * torch.ones(sample_size))
     
-    return torch.tensor(X), y
+    return X, y
 
 def bonus_visualize_data(X_noisy: torch.Tensor, y_noisy: torch.Tensor, X_true: torch.Tensor, title: str = ""):
     y_true = 2 * np.log(X_true + 1) + 3
@@ -132,7 +129,7 @@ def bonus_visualize_data(X_noisy: torch.Tensor, y_noisy: torch.Tensor, X_true: t
     plt.ylabel('f(x)')
     plt.title(title)
     plt.legend()
-    plt.savefig('bonus_visualize_data.png', dpi=350)
+    # plt.savefig('bonus_visualize_data.png', dpi=350)
     plt.show()
 
 def bonus_plot_function_compare(X: torch.Tensor, estimated_coeffs: np.ndarray, estimated_bias: float, n_plot: int):
@@ -149,11 +146,12 @@ def bonus_plot_function_compare(X: torch.Tensor, estimated_coeffs: np.ndarray, e
         plt.ylim(2, 9)
     plt.legend()
     plt.title('True VS estimated function')
-    plt.savefig('bonus_plot_function_compare.png', dpi=350)
+    # plt.savefig('bonus_plot_function_compare.png', dpi=350)
     plt.show()
 
 if __name__ == "__main__":
     # Initialization of the parameters
+    first_plot_range = [-4, 4]
     z_range = [-2, 2]
     coeffs = np.array([1/30,-0.1, 5, -1, 1])
     n_samples = 500
@@ -164,12 +162,12 @@ if __name__ == "__main__":
     '''
     Code for Q1
     '''
-    # assert np.version.version=="2.1"
+    assert np.version.version=="2.1"
 
     '''
     Code for Q2
     '''
-    plot_polynomial(coeffs, [-4, 4], 'r')
+    plot_polynomial(coeffs, first_plot_range, 'r')
     
     '''
     Code for Q3 and Q4
@@ -199,7 +197,7 @@ if __name__ == "__main__":
     '''
     Code for Q8
     '''
-    estimated_coeffs = model.weight.detach().numpy().flatten()[::-1]
+    estimated_coeffs = model.weight.detach().numpy().reshape(-1)[::-1]
     z_min, z_max = z_range
     z = np.linspace(z_min, z_max)
 
@@ -213,7 +211,7 @@ if __name__ == "__main__":
     plt.ylabel('p(z)')
     plt.legend()
     plt.title('True VS estimated polynomial')
-    plt.savefig('true_vs_estimated.png', dpi=350)
+    # plt.savefig('true_vs_estimated.png', dpi=350)
     plt.show()
 
     '''
@@ -233,7 +231,7 @@ if __name__ == "__main__":
     plt.ylabel('W value')
     plt.legend(loc='upper left')
     plt.title('Estimated w over time')
-    plt.savefig('estimated_w.png', dpi=350)
+    # plt.savefig('estimated_w.png', dpi=350)
     plt.show()
 
     '''
